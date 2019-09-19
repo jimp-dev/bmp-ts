@@ -1,3 +1,15 @@
+# v0.2.7 (Thu Sep 19 2019)
+
+#### ⚠️  Pushed to master
+
+- run on 10  ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v0.2.6 (Thu Sep 19 2019)
 
 #### 🐛  Bug Fix
