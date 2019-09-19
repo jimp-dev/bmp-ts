@@ -5,7 +5,7 @@
   <p>A pure typescript <code>bmp</code> encoder and decoder.</p>
 </div
 
-[![CircleCI](https://img.shields.io/circleci/project/github/hipstersmoothie/bmp-js/master.svg?style=for-the-badge)](https://circleci.com/gh/hipstersmoothie/bmp-js) [![Codecov](https://img.shields.io/codecov/c/github/intuit/ignite.svg?style=for-the-badge)](https://codecov.io/gh/hipstersmoothie/bmp-js) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
+[![CircleCI](https://img.shields.io/circleci/project/github/hipstersmoothie/bmp-ts/master.svg?style=for-the-badge)](https://circleci.com/gh/hipstersmoothie/bmp-ts) [![Codecov](https://img.shields.io/codecov/c/github/hipstersmoothie/bmp-ts.svg?style=for-the-badge)](https://codecov.io/gh/hipstersmoothie/bmp-ts) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
 
 Supports decoding and encoding in all bit depths (1, 4, 8, 16, 24, 32).
 
@@ -83,11 +83,11 @@ fs.writeFileSync('./image.bmp', rawData.data);
 | bitPP           | number  | The number of bits per pixel                                                                           |
 | compress        | number  | The compression method being used. See the supported compression methods                               |
 | rawSize         | number  | The image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps.    |
-| hr              | number  | The horizontal resolution of the image. (pixel per metre, signed integer)                               |
+| hr              | number  | The horizontal resolution of the image. (pixel per metre, signed integer)                              |
 | vr              | number  | The vertical resolution of the image. (pixel per metre, signed integer)                                |
 | colors          | number  | The number of colors in the color palette, or 0 to default to 2n                                       |
 | importantColors | number  | The number of important colors used, or 0 when every color is important; generally ignored             |
-| palette         | Color[] | The colors used to render the image. only used for 1, 4, and 8 bitPP images                             |
+| palette         | Color[] | The colors used to render the image. only used for 1, 4, and 8 bitPP images                            |
 | data            | Byte[]  | The data in ABGR                                                                                       |
 
 ### Color

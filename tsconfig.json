@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "target": "es2017",
     "declaration": true,
-    "lib": ["es2017"],
+    "lib": ["esnext"],
     "moduleResolution": "node",
     "downlevelIteration": true,
     "noUnusedLocals": true,
