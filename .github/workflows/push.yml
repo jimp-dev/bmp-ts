@@ -20,19 +20,28 @@ jobs:
           git remote add origin "https://$GH_TOKEN@github.com/hipstersmoothie/bmp-ts.git"
           git fetch origin
           git branch --set-upstream-to origin/master
-      - name: Use Node.js 12.x
+      - name: Use Node.js 10.x
         uses: actions/setup-node@v1
         with:
           node-version: 10.x
-      - name: Create Release
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build
         run: |
           git remote -v
           yarn
           yarn build
+      - name: Test
+        run: |
           yarn lint
           yarn test
-          bash <(curl -s https://codecov.io/bash) -t $CODECOV_KEY
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_KEY}}
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          yarn lint
+          yarn test
           yarn release
