@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [8.x, 10.x, 12.x]
+        node-version: [8.x]
 
     steps:
       - uses: actions/checkout@v1
@@ -22,6 +22,7 @@ jobs:
           yarn build
           yarn lint
           yarn test
+          bash <(curl -s https://codecov.io/bash) -t $CODECOV_KEY
   release:
     runs-on: ubuntu-latest
 
