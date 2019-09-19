@@ -3,29 +3,8 @@ name: Node CI
 on: [push]
 
 jobs:
-  build:
+  default:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [8.x]
-
-    steps:
-      - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: npm install, build, and lint
-        run: |
-          yarn
-          yarn build
-          yarn lint
-          yarn test
-          bash <(curl -s https://codecov.io/bash) -t $CODECOV_KEY
-  release:
-    runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v1
       - name: Skip CI
@@ -44,7 +23,7 @@ jobs:
       - name: Use Node.js 12.x
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 10.x
       - name: Create Release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -53,4 +32,7 @@ jobs:
           git remote -v
           yarn
           yarn build
+          yarn lint
+          yarn test
+          bash <(curl -s https://codecov.io/bash) -t $CODECOV_KEY
           yarn release
