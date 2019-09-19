@@ -1,3 +1,15 @@
+# v0.2.8 (Thu Sep 19 2019)
+
+#### ⚠️  Pushed to master
+
+- use codecov action  ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v0.2.7 (Thu Sep 19 2019)
 
 #### ⚠️  Pushed to master
