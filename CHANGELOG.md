@@ -1,3 +1,15 @@
+# v1.0.0 (Thu Sep 19 2019)
+
+#### 💥  Breaking Change
+
+- 🍾 Release v1 🍾 [#6](https://github.com/hipstersmoothie/bmp-ts/pull/6) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v0.2.8 (Thu Sep 19 2019)
 
 #### ⚠️  Pushed to master
