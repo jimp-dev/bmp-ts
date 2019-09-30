@@ -1,3 +1,19 @@
+# v1.0.1 (Mon Sep 30 2019)
+
+#### 🐛  Bug Fix
+
+- Bump js-yaml from 3.12.0 to 3.13.1 [#2](https://github.com/hipstersmoothie/bmp-ts/pull/2) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump merge from 1.2.0 to 1.2.1 [#3](https://github.com/hipstersmoothie/bmp-ts/pull/3) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mixin-deep from 1.3.1 to 1.3.2 [#4](https://github.com/hipstersmoothie/bmp-ts/pull/4) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump lodash from 4.17.11 to 4.17.15 [#5](https://github.com/hipstersmoothie/bmp-ts/pull/5) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump handlebars from 4.0.12 to 4.4.0 [#7](https://github.com/hipstersmoothie/bmp-ts/pull/7) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 1
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+
+---
+
 # v1.0.0 (Thu Sep 19 2019)
 
 #### 💥  Breaking Change
