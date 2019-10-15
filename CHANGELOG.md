@@ -1,3 +1,15 @@
+# v1.0.2 (Tue Oct 15 2019)
+
+#### 🐛  Bug Fix
+
+- add missing types [#9](https://github.com/hipstersmoothie/bmp-ts/pull/9) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v1.0.1 (Mon Sep 30 2019)
 
 #### 🐛  Bug Fix
