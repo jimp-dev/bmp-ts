@@ -3,6 +3,7 @@
   "version": "1.0.3",
   "description": "A pure typescript BMP encoder and decoder",
   "main": "dist/index.js",
+  "exports": "./dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
   "repository": {
