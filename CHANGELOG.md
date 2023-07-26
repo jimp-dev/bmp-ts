@@ -1,3 +1,21 @@
+# v1.0.4 (Wed Jul 26 2023)
+
+#### 🐛 Bug Fix
+
+- Set module as commonjs so the built package can be imported correctly [#28](https://github.com/jimp-dev/bmp-ts/pull/28) (2283700@cognizant.com [@sxwei123](https://github.com/sxwei123))
+
+#### ⚠️ Pushed to `master`
+
+- upgrades (lisowski54@gmail.com)
+
+#### Authors: 3
+
+- Andrew Lisowski (lisowski54@gmail.com)
+- L S ([@sxwei123](https://github.com/sxwei123))
+- Leon Song (2283700@cognizant.com)
+
+---
+
 # v1.0.2 (Tue Oct 15 2019)
 
 #### 🐛  Bug Fix
