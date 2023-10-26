@@ -85,6 +85,9 @@ export default class BmpDecoder implements IImage {
 
     this.width = this.readUInt32LE();
     this.height = this.readUInt32LE();
+    // negative value are possible here => implies bottom down
+    this.height =
+    this.height > 0x7fffffff ? this.height - 0x100000000 : this.height;
 
     this.planes = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
