@@ -6,3 +6,10 @@ export default {
     new BmpDecoder(bmpData, options),
   encode: (imgData: IImage) => new BmpEncoder(imgData)
 };
+
+export function decode(bmpData: Buffer, options?: IDecoderOptions) {
+  return new BmpDecoder(bmpData, options);
+}
+export function encode(imgData: IImage) {
+  return new BmpEncoder(imgData);
+}
