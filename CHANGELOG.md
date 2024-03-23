@@ -1,3 +1,15 @@
+# v1.0.7 (Sat Mar 23 2024)
+
+#### ⚠️ Pushed to `master`
+
+- fix encodder types (lisowski54@gmail.com)
+
+#### Authors: 1
+
+- Andrew Lisowski (lisowski54@gmail.com)
+
+---
+
 # v1.0.6 (Sat Mar 23 2024)
 
 
