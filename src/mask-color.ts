@@ -42,7 +42,7 @@ export default function maskColor(
   maskRed: number,
   maskGreen: number,
   maskBlue: number,
-  maskAlpha: number
+  maskAlpha: number,
 ) {
   const maskRedR = (~maskRed + 1) & maskRed;
   const maskGreenR = (~maskGreen + 1) & maskGreen;
@@ -65,6 +65,6 @@ export default function maskColor(
       maskAlpha !== 0
         ? (x: number) =>
             (((x & maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
-        : () => 255
+        : () => 255,
   };
 }

@@ -61,7 +61,7 @@ const bmpData = {
   data, // Buffer
   bitPP: 1 | 2 | 4 | 16 | 24 | 32, // The number of bits per pixel
   width, // Number
-  height // Number
+  height, // Number
 };
 
 // Compression is not supported
@@ -122,8 +122,8 @@ const rawData = bmp.encode({
     { red: 0, green: 255, blue: 255, quad: 0 },
     { red: 0, green: 255, blue: 0, quad: 0 },
     { red: 0, green: 0, blue: 255, quad: 0 },
-    { red: 0, green: 0, blue: 0, quad: 0 }
-  ]
+    { red: 0, green: 0, blue: 0, quad: 0 },
+  ],
 });
 
 fs.writeFileSync('./image.bmp', rawData.data);

@@ -17,7 +17,7 @@ var bmps = [
   // './bit16_x444',
   // './bit16_x555'
   // './bit24'
-  './bit32'
+  './bit32',
   // './bit32_alpha'
 ];
 
@@ -55,8 +55,8 @@ for (let b = 0; b < bmps.length; b++) {
     decoder.width,
     decoder.height,
     {
-      threshold: 0.001
-    }
+      threshold: 0.001,
+    },
   );
 
   diff.pack().pipe(fs.createWriteStream('diff.png'));

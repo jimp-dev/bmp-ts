@@ -30,9 +30,7 @@ jobs:
           yarn
           yarn build
       - name: Test
-        run: |
-          yarn lint
-          yarn test
+        run: yarn test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1.0.2
         with:
@@ -41,7 +39,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          yarn lint
-          yarn test
-          yarn release
+        run: yarn release

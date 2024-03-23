@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import bmp from '../lib/';
+import bmp from '../src/index.js';
 
 const createPath = (p: string) => path.join(process.cwd(), p);
 const readFile = (p: string) => fs.readFileSync(createPath(p));
@@ -15,11 +15,13 @@ const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
     .digest(encoding);
 
 describe('decode', () => {
-  const decodeTest = (bitPP: number | string, options = {}) => () => {
-    const buff = readFile(`./test/images/bit${bitPP}.bmp`);
-    const { data } = bmp.decode(buff, options);
-    expect(checksum(data)).toMatchSnapshot();
-  };
+  const decodeTest =
+    (bitPP: number | string, options = {}) =>
+    () => {
+      const buff = readFile(`./test/images/bit${bitPP}.bmp`);
+      const { data } = bmp.decode(buff, options);
+      expect(checksum(data)).toMatchSnapshot();
+    };
 
   test('errors for non bmp files', () => {
     const buff = readFile('package.json');
@@ -56,15 +58,17 @@ describe('decode', () => {
 });
 
 describe('encode', () => {
-  const encodeTest = (bitPP: number, file = 32) => () => {
-    const buff = readFile(`./test/images/bit${file}.bmp`);
-    const bitmap = bmp.decode(buff);
+  const encodeTest =
+    (bitPP: number, file = 32) =>
+    () => {
+      const buff = readFile(`./test/images/bit${file}.bmp`);
+      const bitmap = bmp.decode(buff);
 
-    bitmap.bitPP = bitPP;
+      bitmap.bitPP = bitPP;
 
-    const { data } = bmp.encode(bitmap);
-    expect(checksum(data)).toMatchSnapshot();
-  };
+      const { data } = bmp.encode(bitmap);
+      expect(checksum(data)).toMatchSnapshot();
+    };
 
   const errorTest = (bitPP: number) => () => {
     const buff = readFile('./test/images/bit32.bmp');
@@ -93,19 +97,18 @@ describe('encode', () => {
 });
 
 describe('decode -> encode', () => {
-  const compareDecodeEncode = (
-    bitPP: number,
-    file: number | string = bitPP
-  ) => () => {
-    const before = readFile(`./test/images/bit${file}.bmp`);
-    const decoded = bmp.decode(before);
+  const compareDecodeEncode =
+    (bitPP: number, file: number | string = bitPP) =>
+    () => {
+      const before = readFile(`./test/images/bit${file}.bmp`);
+      const decoded = bmp.decode(before);
 
-    decoded.bitPP = bitPP;
+      decoded.bitPP = bitPP;
 
-    const after = bmp.encode(decoded).data;
+      const after = bmp.encode(decoded).data;
 
-    expect(checksum(before)).toBe(checksum(after));
-  };
+      expect(checksum(before)).toBe(checksum(after));
+    };
 
   test('1-bit', compareDecodeEncode(1));
   test('4-bit', compareDecodeEncode(4));

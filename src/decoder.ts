@@ -1,7 +1,8 @@
-import HeaderTypes from './header-types';
-import maskColor from './mask-color';
+import HeaderTypes from './header-types.js';
+import maskColor from './mask-color.js';
+import { Compression, IColor, IDecoderOptions, IImage } from './types.js';
 
-type IColorProcessor = (x: number, line: number) => void;
+type IColorProcessor = (x: number, line: number) => void | false;
 
 export default class BmpDecoder implements IImage {
   // Header
@@ -161,7 +162,7 @@ export default class BmpDecoder implements IImage {
           red,
           green,
           blue,
-          quad
+          quad,
         };
       }
     }
@@ -178,7 +179,7 @@ export default class BmpDecoder implements IImage {
       this.maskRed,
       this.maskGreen,
       this.maskBlue,
-      this.maskAlpha
+      this.maskAlpha,
     );
 
     this.shiftRed = coloShift.shiftRed;
@@ -282,7 +283,7 @@ export default class BmpDecoder implements IImage {
             for (let i = 0; i < b; i++) {
               location = this.setPixelData(
                 location,
-                lowNibble ? c & 0x0f : (c & 0xf0) >> 4
+                lowNibble ? c & 0x0f : (c & 0xf0) >> 4,
               );
 
               if (i & 1 && i + 1 < b) {
@@ -301,7 +302,7 @@ export default class BmpDecoder implements IImage {
           for (let i = 0; i < a; i++) {
             location = this.setPixelData(
               location,
-              lowNibble ? b & 0x0f : (b & 0xf0) >> 4
+              lowNibble ? b & 0x0f : (b & 0xf0) >> 4,
             );
             lowNibble = !lowNibble;
           }
@@ -462,7 +463,7 @@ export default class BmpDecoder implements IImage {
   private scanImage(
     padding = 0,
     width = this.width,
-    processPixel: IColorProcessor
+    processPixel: IColorProcessor,
   ) {
     for (let y = this.height - 1; y >= 0; y--) {
       const line = this.bottomUp ? y : this.height - 1 - y;

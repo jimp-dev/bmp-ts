@@ -1,4 +1,5 @@
-import HeaderTypes from './header-types';
+import HeaderTypes from './header-types.js';
+import { IColor, IImage } from './types.js';
 
 type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
@@ -56,7 +57,7 @@ export default class BmpEncoder implements IImage {
     this.importantColors = imgData.importantColors || 0;
     this.colors = Math.min(
       2 ** (this.bitPP - 1 || 1),
-      imgData.colors || Infinity
+      imgData.colors || Infinity,
     );
     this.palette = imgData.palette || [];
 
@@ -202,9 +203,9 @@ export default class BmpEncoder implements IImage {
         quad: this.buffer[i++],
         blue: this.buffer[i++],
         green: this.buffer[i++],
-        red: this.buffer[i++]
+        red: this.buffer[i++],
       });
-      const colorExists = colors.findIndex(c => c === colorInt);
+      const colorExists = colors.findIndex((c) => c === colorInt);
 
       if (colorExists !== -1) {
         integerPair.push(colorExists);
@@ -231,9 +232,9 @@ export default class BmpEncoder implements IImage {
         quad: this.buffer[i++],
         blue: this.buffer[i++],
         green: this.buffer[i++],
-        red: this.buffer[i++]
+        red: this.buffer[i++],
       });
-      const colorExists = colors.findIndex(c => c === colorInt);
+      const colorExists = colors.findIndex((c) => c === colorInt);
 
       if (colorExists !== -1) {
         this.data[p] = colorExists;
@@ -295,7 +296,7 @@ export default class BmpEncoder implements IImage {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const p = Math.floor(
-          this.pos + (this.height - 1 - y) * rowBytes + x * this.bytesInColor
+          this.pos + (this.height - 1 - y) * rowBytes + x * this.bytesInColor,
         );
 
         i = writePixel.call(this, p, i, x, y);
@@ -314,9 +315,7 @@ export default class BmpEncoder implements IImage {
       }
     } else {
       throw new Error(
-        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${
-          this.colors
-        } colors. Colors must be 32-bit integers.`
+        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${this.colors} colors. Colors must be 32-bit integers.`,
       );
     }
 
