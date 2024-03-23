@@ -46,7 +46,7 @@ export default class BmpEncoder implements IImage {
 
     // Header
     this.flag = 'BM';
-    this.bitPP = imgData.bitPP;
+    this.bitPP = imgData.bitPP || 24;
     this.offset = 54;
     this.reserved1 = imgData.reserved1 || 0;
     this.reserved2 = imgData.reserved2 || 0;

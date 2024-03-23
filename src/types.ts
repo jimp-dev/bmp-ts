@@ -18,22 +18,23 @@ export interface IDecoderOptions {
 }
 
 export interface IImage {
-  flag: string;
-  fileSize: number;
-  reserved1?: number;
-  reserved2?: number;
-  offset: number;
-  headerSize: number;
   width: number;
   height: number;
+  data: Buffer;
+
+  flag?: string;
+  fileSize?: number;
+  reserved1?: number;
+  reserved2?: number;
+  offset?: number;
+  headerSize?: number;
   planes?: number;
-  bitPP: number;
+  bitPP?: number;
   compression?: Compression;
-  rawSize: number;
+  rawSize?: number;
   hr?: number;
   vr?: number;
   colors?: number;
   importantColors?: number;
   palette?: IColor[];
-  data: Buffer;
 }
