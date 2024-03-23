@@ -1,3 +1,15 @@
+# v1.0.8 (Sat Mar 23 2024)
+
+#### ⚠️ Pushed to `master`
+
+- document things (lisowski54@gmail.com)
+
+#### Authors: 1
+
+- Andrew Lisowski (lisowski54@gmail.com)
+
+---
+
 # v1.0.7 (Sat Mar 23 2024)
 
 #### ⚠️ Pushed to `master`
