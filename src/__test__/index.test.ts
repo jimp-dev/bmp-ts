@@ -1,10 +1,11 @@
+import { describe, expect, test } from 'vitest';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import bmp from '../src/index.js';
+import bmp from '../index.js';
 
-const createPath = (p: string) => path.join(process.cwd(), p);
+const createPath = (p: string) => path.join(__dirname, p);
 const readFile = (p: string) => fs.readFileSync(createPath(p));
 
 const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
@@ -18,13 +19,13 @@ describe('decode', () => {
   const decodeTest =
     (bitPP: number | string, options = {}) =>
     () => {
-      const buff = readFile(`./test/images/bit${bitPP}.bmp`);
+      const buff = readFile(`./images/bit${bitPP}.bmp`);
       const { data } = bmp.decode(buff, options);
       expect(checksum(data)).toMatchSnapshot();
     };
 
   test('errors for non bmp files', () => {
-    const buff = readFile('package.json');
+    const buff = readFile('../../package.json');
     expect(() => bmp.decode(buff)).toThrow();
   });
 
@@ -61,7 +62,7 @@ describe('encode', () => {
   const encodeTest =
     (bitPP: number, file = 32) =>
     () => {
-      const buff = readFile(`./test/images/bit${file}.bmp`);
+      const buff = readFile(`./images/bit${file}.bmp`);
       const bitmap = bmp.decode(buff);
 
       bitmap.bitPP = bitPP;
@@ -71,7 +72,7 @@ describe('encode', () => {
     };
 
   const errorTest = (bitPP: number) => () => {
-    const buff = readFile('./test/images/bit32.bmp');
+    const buff = readFile('./images/bit32.bmp');
     const bitmap = bmp.decode(buff);
 
     bitmap.bitPP = bitPP;
@@ -100,7 +101,7 @@ describe('decode -> encode', () => {
   const compareDecodeEncode =
     (bitPP: number, file: number | string = bitPP) =>
     () => {
-      const before = readFile(`./test/images/bit${file}.bmp`);
+      const before = readFile(`./images/bit${file}.bmp`);
       const decoded = bmp.decode(before);
 
       decoded.bitPP = bitPP;
