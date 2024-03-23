@@ -1,3 +1,9 @@
+# v1.0.6 (Sat Mar 23 2024)
+
+
+
+---
+
 # v1.0.5 (Sat Mar 23 2024)
 
 #### ⚠️ Pushed to `master`
