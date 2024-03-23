@@ -1,3 +1,18 @@
+# v1.0.5 (Sat Mar 23 2024)
+
+#### ⚠️ Pushed to `master`
+
+- FIX decode error when image is bottom up (francoisp@netmosphere.net)
+- fix tests ([@hipstersmoothie](https://github.com/hipstersmoothie))
+- upgrade deps, properly expose types ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 2
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+- Francois Payette (francoisp@netmosphere.net)
+
+---
+
 # v1.0.4 (Wed Jul 26 2023)
 
 #### 🐛 Bug Fix
