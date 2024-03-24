@@ -1,4 +1,4 @@
-export const enum Compression {
+export enum BmpCompression {
   NONE = 0,
   BI_RLE8 = 1,
   BI_RLE4 = 2,
@@ -6,18 +6,18 @@ export const enum Compression {
   BI_ALPHA_BIT_FIELDS = 6,
 }
 
-export interface IColor {
+export interface BmpColor {
   red: number;
   green: number;
   blue: number;
   quad: number;
 }
 
-export interface IDecoderOptions {
+export interface BmpDecoderOptions {
   toRGBA?: boolean;
 }
 
-export interface IImage {
+export interface BmpImage {
   width: number;
   height: number;
   data: Buffer;
@@ -36,7 +36,7 @@ export interface IImage {
   headerSize?: number;
   planes?: number;
   bitPP?: number;
-  compression?: Compression;
+  compression?: BmpCompression;
   rawSize?: number;
   /**
    * The hr value is used to store information about the intended pixel density of the image when printed or displayed. It doesn't directly influence how the image is displayed on the screen, as screens don't usually have the ability to adjust their pixel density
@@ -66,5 +66,5 @@ export interface IImage {
    * For 1-bit images, the palette has 2 colors, for 4-bit images, the palette has 16 colors, and for an 8-bit image, the palette can contain up to 256 colors. The actual number of colors used in the palette is identified by the ﻿colors (﻿biClrUsed) field in the header.
    * For 24-bit and 32-bit BMP, where each pixel is described by distinct R, G, and B (and potentially alpha) values, a palette isn't used or needed.
    */
-  palette?: IColor[];
+  palette?: BmpColor[];
 }

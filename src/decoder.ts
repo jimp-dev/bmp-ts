@@ -1,10 +1,10 @@
 import HeaderTypes from './header-types.js';
 import maskColor from './mask-color.js';
-import { Compression, IColor, IDecoderOptions, IImage } from './types.js';
+import { BmpCompression, BmpColor, BmpDecoderOptions, BmpImage } from './types.js';
 
 type IColorProcessor = (x: number, line: number) => void | false;
 
-export default class BmpDecoder implements IImage {
+export default class BmpDecoder implements BmpImage {
   // Header
   public flag: string;
   public fileSize!: number;
@@ -16,13 +16,13 @@ export default class BmpDecoder implements IImage {
   public height!: number;
   public planes!: number;
   public bitPP!: number;
-  public compression?: Compression;
+  public compression?: BmpCompression;
   public rawSize!: number;
   public hr!: number;
   public vr!: number;
   public colors!: number;
   public importantColors!: number;
-  public palette!: IColor[];
+  public palette!: BmpColor[];
   public data!: Buffer;
 
   private maskRed!: number;
@@ -46,7 +46,7 @@ export default class BmpDecoder implements IImage {
   private shiftBlue!: (x: number) => number;
   private shiftAlpha!: (x: number) => number;
 
-  constructor(buffer: Buffer, { toRGBA }: IDecoderOptions = { toRGBA: false }) {
+  constructor(buffer: Buffer, { toRGBA }: BmpDecoderOptions = { toRGBA: false }) {
     this.buffer = buffer;
     this.toRGBA = !!toRGBA;
     this.pos = 0;
@@ -119,8 +119,8 @@ export default class BmpDecoder implements IImage {
 
     if (
       this.headerSize > HeaderTypes.BITMAP_INFO_HEADER ||
-      this.compression === Compression.BI_BIT_FIELDS ||
-      this.compression === Compression.BI_ALPHA_BIT_FIELDS
+      this.compression === BmpCompression.BI_BIT_FIELDS ||
+      this.compression === BmpCompression.BI_ALPHA_BIT_FIELDS
     ) {
       this.maskRed = this.readUInt32LE();
       this.maskGreen = this.readUInt32LE();
@@ -131,7 +131,7 @@ export default class BmpDecoder implements IImage {
 
     if (
       this.headerSize > HeaderTypes.BITMAP_V2_INFO_HEADER ||
-      this.compression === Compression.BI_ALPHA_BIT_FIELDS
+      this.compression === BmpCompression.BI_ALPHA_BIT_FIELDS
     ) {
       this.maskAlpha = this.readUInt32LE();
     }
@@ -246,7 +246,7 @@ export default class BmpDecoder implements IImage {
   }
 
   private bit4() {
-    if (this.compression === Compression.BI_RLE4) {
+    if (this.compression === BmpCompression.BI_RLE4) {
       this.data.fill(0);
 
       let lowNibble = false; //for all count of pixel
@@ -345,7 +345,7 @@ export default class BmpDecoder implements IImage {
   }
 
   private bit8() {
-    if (this.compression === Compression.BI_RLE8) {
+    if (this.compression === BmpCompression.BI_RLE8) {
       this.data.fill(0);
 
       let lines = this.bottomUp ? this.height - 1 : 0;

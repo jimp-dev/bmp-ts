@@ -1,5 +1,5 @@
 import HeaderTypes from './header-types.js';
-import { IColor, IImage } from './types.js';
+import { BmpColor, BmpImage } from './types.js';
 
 type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
@@ -7,13 +7,13 @@ function createInteger(numbers: number[]) {
   return numbers.reduce((final, n) => (final << 1) | n, 0);
 }
 
-function createColor(color: IColor): number {
+function createColor(color: BmpColor): number {
   return (
     (color.quad << 24) | (color.red << 16) | (color.green << 8) | color.blue
   );
 }
 
-export default class BmpEncoder implements IImage {
+export default class BmpEncoder implements BmpImage {
   public readonly fileSize: number;
   public readonly reserved1: number;
   public readonly reserved2: number;
@@ -31,14 +31,14 @@ export default class BmpEncoder implements IImage {
   public readonly rawSize: number;
   public readonly headerSize: number;
   public readonly data: Buffer;
-  public readonly palette: IColor[];
+  public readonly palette: BmpColor[];
 
   private readonly extraBytes: number;
   private readonly buffer: Buffer;
   private readonly bytesInColor: number;
   private pos: number;
 
-  constructor(imgData: IImage) {
+  constructor(imgData: BmpImage) {
     this.buffer = imgData.data;
     this.width = imgData.width;
     this.height = imgData.height;
