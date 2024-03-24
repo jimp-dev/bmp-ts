@@ -1,3 +1,15 @@
+# v1.0.9 (Sat Mar 23 2024)
+
+#### ⚠️ Pushed to `master`
+
+- export types (lisowski54@gmail.com)
+
+#### Authors: 1
+
+- Andrew Lisowski (lisowski54@gmail.com)
+
+---
+
 # v1.0.8 (Sat Mar 23 2024)
 
 #### ⚠️ Pushed to `master`
