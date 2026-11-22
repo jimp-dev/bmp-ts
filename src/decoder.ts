@@ -4,6 +4,8 @@ import { BmpCompression, BmpColor, BmpDecoderOptions, BmpImage } from './types.j
 
 type IColorProcessor = (x: number, line: number) => void | false;
 
+const SUPPORTED_BIT_DEPTHS = [1, 4, 8, 16, 24, 32];
+
 export default class BmpDecoder implements BmpImage {
   // Header
   public flag: string;
@@ -46,7 +48,10 @@ export default class BmpDecoder implements BmpImage {
   private shiftBlue!: (x: number) => number;
   private shiftAlpha!: (x: number) => number;
 
-  constructor(buffer: Buffer, { toRGBA }: BmpDecoderOptions = { toRGBA: false }) {
+  constructor(
+    buffer: Buffer,
+    { toRGBA, maxResolutionInMP = 100 }: BmpDecoderOptions = { toRGBA: false },
+  ) {
     this.buffer = buffer;
     this.toRGBA = !!toRGBA;
     this.pos = 0;
@@ -63,7 +68,55 @@ export default class BmpDecoder implements BmpImage {
     this.locAlpha = this.toRGBA ? 3 : 0;
 
     this.parseHeader();
+    this.validate(maxResolutionInMP);
     this.parseRGBA();
+  }
+
+  /**
+   * parseRGBA allocates width * height * 4 bytes straight from the header,
+   * so make sure the header is sane and the pixel data can actually fill it.
+   */
+  private validate(maxResolutionInMP: number) {
+    const { width, height, bitPP } = this;
+
+    // The width is a signed value, but negative widths aren't allowed
+    if (width === 0 || width > 0x7fffffff || height === 0) {
+      throw new Error(`Invalid BMP dimensions ${width}x${height}`);
+    }
+
+    if (!SUPPORTED_BIT_DEPTHS.includes(bitPP)) {
+      throw new Error(`Unsupported BMP bit depth ${bitPP}`);
+    }
+
+    if (width * height > maxResolutionInMP * 1_000_000) {
+      throw new Error(
+        `BMP dimensions ${width}x${height} exceed the maximum resolution of ${maxResolutionInMP} megapixels`,
+      );
+    }
+
+    const available = Math.max(this.buffer.length - this.pos, 0);
+    const isRle =
+      (this.compression === BmpCompression.BI_RLE8 && bitPP === 8) ||
+      (this.compression === BmpCompression.BI_RLE4 && bitPP === 4);
+
+    if (isRle) {
+      // A single run-length code is 2 bytes and expands to at most 255 pixels
+      if (width * height > Math.ceil(available / 2) * 255) {
+        throw new Error(
+          `BMP data is too short for an RLE image of ${width}x${height}`,
+        );
+      }
+    } else {
+      // Rows are padded to 4 bytes, but the last row's padding is never read
+      const stride = Math.ceil((width * bitPP) / 32) * 4;
+      const required = stride * (height - 1) + Math.ceil((width * bitPP) / 8);
+
+      if (required > available) {
+        throw new Error(
+          `BMP data is too short for an image of ${width}x${height} at ${bitPP} bits per pixel`,
+        );
+      }
+    }
   }
 
   private parseHeader() {
