@@ -1,3 +1,15 @@
+# v1.1.0 (Sun Nov 22 2026)
+
+#### 🚀 Enhancement
+
+- Validate dimensions before allocating pixel data [#32](https://github.com/jimp-dev/bmp-ts/pull/32) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v1.0.9 (Sat Mar 23 2024)
 
 #### ⚠️ Pushed to `master`
