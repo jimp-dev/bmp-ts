@@ -15,6 +15,42 @@ const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
     // @ts-ignore
     .digest(encoding);
 
+/** Build a BMP with a BITMAPINFOHEADER and an optional palette */
+const createBmp = ({
+  width,
+  height,
+  bitPP,
+  compression = 0,
+  palette = [],
+  pixels,
+}: {
+  width: number;
+  height: number;
+  bitPP: number;
+  compression?: number;
+  palette?: number[];
+  pixels: number[];
+}) => {
+  const offset = 14 + 40 + palette.length * 4;
+  const buffer = Buffer.alloc(offset + pixels.length);
+
+  buffer.write('BM', 0);
+  buffer.writeUInt32LE(buffer.length, 2);
+  buffer.writeUInt32LE(offset, 10);
+  buffer.writeUInt32LE(40, 14);
+  buffer.writeInt32LE(width, 18);
+  buffer.writeInt32LE(height, 22);
+  buffer.writeUInt16LE(1, 26);
+  buffer.writeUInt16LE(bitPP, 28);
+  buffer.writeUInt32LE(compression, 30);
+  buffer.writeUInt32LE(pixels.length, 34);
+  buffer.writeUInt32LE(palette.length, 46);
+  palette.forEach((color, i) => buffer.writeUInt32LE(color, 54 + i * 4));
+  buffer.set(pixels, offset);
+
+  return buffer;
+};
+
 describe('decode', () => {
   const decodeTest =
     (bitPP: number | string, options = {}) =>
@@ -119,43 +155,125 @@ describe('decode -> encode', () => {
   test('32-bit', compareDecodeEncode(32));
 });
 
-describe('decode validation', () => {
-  /** Build a BMP with a BITMAPINFOHEADER and an optional palette */
-  const createBmp = ({
-    width,
-    height,
-    bitPP,
-    compression = 0,
-    palette = [],
-    pixels,
-  }: {
-    width: number;
-    height: number;
-    bitPP: number;
-    compression?: number;
-    palette?: number[];
-    pixels: number[];
-  }) => {
-    const offset = 14 + 40 + palette.length * 4;
-    const buffer = Buffer.alloc(offset + pixels.length);
+describe('decode pixels', () => {
+  /** Count the pixels whose color differs, ignoring alpha */
+  const countDifferentPixels = (a: Buffer, b: Buffer) => {
+    let count = 0;
 
-    buffer.write('BM', 0);
-    buffer.writeUInt32LE(buffer.length, 2);
-    buffer.writeUInt32LE(offset, 10);
-    buffer.writeUInt32LE(40, 14);
-    buffer.writeInt32LE(width, 18);
-    buffer.writeInt32LE(height, 22);
-    buffer.writeUInt16LE(1, 26);
-    buffer.writeUInt16LE(bitPP, 28);
-    buffer.writeUInt32LE(compression, 30);
-    buffer.writeUInt32LE(pixels.length, 34);
-    buffer.writeUInt32LE(palette.length, 46);
-    palette.forEach((color, i) => buffer.writeUInt32LE(color, 54 + i * 4));
-    buffer.set(pixels, offset);
+    for (let i = 0; i < a.length; i += 4) {
+      if (a.compare(b, i, i + 4, i, i + 4) !== 0) {
+        count++;
+      }
+    }
 
-    return buffer;
+    return count;
   };
 
+  describe.each([{ toRGBA: false }, { toRGBA: true }])('%o', (options) => {
+    const decodeColors = (file: string) => {
+      const { data } = bmp.decode(readFile(`./images/${file}.bmp`), options);
+      const alpha = options.toRGBA ? 3 : 0;
+
+      for (let i = alpha; i < data.length; i += 4) {
+        data[i] = 0;
+      }
+
+      return data;
+    };
+
+    // Each image is compared with an uncompressed copy of itself
+    test.each([
+      ['1-bit with an odd width', 'odd_bit1', 'odd_bit1_bit24'],
+      ['4-bit with an odd width', 'odd_bit4', 'odd_bit24'],
+      ['RLE8 from ImageMagick', 'odd_bit8_RLE', 'odd_bit24'],
+      ['RLE4 with deltas', 'bit4_RLE', 'bit4'],
+      ['RLE8 with deltas', 'bit8_RLE', 'bit8'],
+    ])('%s', (_, file, reference) => {
+      const expected = decodeColors(reference);
+      const actual = decodeColors(file);
+
+      expect(actual.length).toBe(expected.length);
+      expect(countDifferentPixels(actual, expected)).toBe(0);
+    });
+  });
+
+  // White, red, green, blue
+  const palette = [0xffffff, 0xff0000, 0x00ff00, 0x0000ff];
+
+  /** Decode an image and turn each pixel back into its palette index */
+  const decodeIndexes = (buffer: Buffer, toRGBA: boolean) => {
+    const { width, height, data } = bmp.decode(buffer, { toRGBA });
+    const [red, green, blue] = toRGBA ? [0, 1, 2] : [3, 2, 1];
+    const rows: number[][] = [];
+
+    for (let y = 0; y < height; y++) {
+      const row: number[] = [];
+
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const color =
+          (data[i + red] << 16) | (data[i + green] << 8) | data[i + blue];
+        row.push(palette.indexOf(color));
+      }
+
+      rows.push(row);
+    }
+
+    return rows;
+  };
+
+  test.each([false, true])('RLE4 (toRGBA: %s)', (toRGBA) => {
+    const image = createBmp({
+      width: 5,
+      height: 3,
+      bitPP: 4,
+      compression: 2,
+      palette,
+      // Rows are stored bottom up
+      pixels: [
+        // 3 pixels alternating 1 and 2, then move right 1 and up 1
+        ...[3, 0x12, 0, 2, 1, 1],
+        // 1 pixel of 3, end of line
+        ...[1, 0x30, 0, 0],
+        // 3 literal pixels, then 2 pixels alternating 3 and 0
+        ...[0, 3, 0x31, 0x20, 2, 0x30],
+        // end of bitmap
+        ...[0, 1],
+      ],
+    });
+
+    // Skipped pixels get palette color 0
+    expect(decodeIndexes(image, toRGBA)).toEqual([
+      [3, 1, 2, 3, 0],
+      [0, 0, 0, 0, 3],
+      [1, 2, 1, 0, 0],
+    ]);
+  });
+
+  test.each([false, true])('RLE8 (toRGBA: %s)', (toRGBA) => {
+    const image = createBmp({
+      width: 4,
+      height: 3,
+      bitPP: 8,
+      compression: 1,
+      palette,
+      pixels: [
+        // 3 literal pixels and a padding byte, then 1 pixel of 1, end of line
+        ...[0, 3, 1, 2, 3, 0, 1, 1, 0, 0],
+        // Move right 2 and up 1, then 2 pixels of 3, end of bitmap
+        ...[0, 2, 2, 1, 2, 3, 0, 1],
+      ],
+    });
+
+    expect(decodeIndexes(image, toRGBA)).toEqual([
+      [0, 0, 3, 3],
+      [0, 0, 0, 0],
+      [1, 2, 3, 1],
+    ]);
+  });
+});
+
+describe('decode validation', () => {
   test('rejects an RLE8 image whose dimensions do not fit its data', () => {
     // The header claims 10000x10000 but there is no pixel data at all
     const crafted = createBmp({
