@@ -98,6 +98,12 @@ export default class BmpDecoder implements BmpImage {
       );
     }
 
+    if (this.offset > this.buffer.length) {
+      throw new Error(
+        `BMP pixel data offset ${this.offset} is past the end of the file`,
+      );
+    }
+
     const available = Math.max(this.buffer.length - this.pos, 0);
     const isRle =
       (this.compression === BmpCompression.BI_RLE8 && bitPP === 8) ||
