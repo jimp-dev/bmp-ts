@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 export enum BmpCompression {
   NONE = 0,
   BI_RLE8 = 1,

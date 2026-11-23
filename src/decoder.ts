@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import HeaderTypes from './header-types.js';
 import maskColor from './mask-color.js';
 import { BmpCompression, BmpColor, BmpDecoderOptions, BmpImage } from './types.js';

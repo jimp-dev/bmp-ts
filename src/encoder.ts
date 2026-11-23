@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import HeaderTypes from './header-types.js';
 import { BmpColor, BmpImage } from './types.js';
 
