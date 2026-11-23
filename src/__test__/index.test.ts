@@ -15,13 +15,17 @@ const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
     // @ts-ignore
     .digest(encoding);
 
-/** Build a BMP with a BITMAPINFOHEADER and an optional palette */
+/**
+ * Build a BMP with a BITMAPINFOHEADER, an optional palette and optional
+ * bytes between the palette and the pixel data
+ */
 const createBmp = ({
   width,
   height,
   bitPP,
   compression = 0,
   palette = [],
+  gap = [],
   pixels,
 }: {
   width: number;
@@ -29,9 +33,10 @@ const createBmp = ({
   bitPP: number;
   compression?: number;
   palette?: number[];
+  gap?: number[];
   pixels: number[];
 }) => {
-  const offset = 14 + 40 + palette.length * 4;
+  const offset = 14 + 40 + palette.length * 4 + gap.length;
   const buffer = Buffer.alloc(offset + pixels.length);
 
   buffer.write('BM', 0);
@@ -46,6 +51,7 @@ const createBmp = ({
   buffer.writeUInt32LE(pixels.length, 34);
   buffer.writeUInt32LE(palette.length, 46);
   palette.forEach((color, i) => buffer.writeUInt32LE(color, 54 + i * 4));
+  buffer.set(gap, offset - gap.length);
   buffer.set(pixels, offset);
 
   return buffer;
@@ -86,6 +92,22 @@ describe('decode', () => {
   });
 
   test('24-bit', decodeTest(24));
+
+  test('reads pixel data from the header offset after the palette', () => {
+    const original = readFile('./images/bit8.bmp');
+    const originalOffset = original.readUInt32LE(10);
+    const gap = Buffer.from([0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe]);
+    const withGap = Buffer.concat([
+      original.subarray(0, originalOffset),
+      gap,
+      original.subarray(originalOffset),
+    ]);
+
+    withGap.writeUInt32LE(withGap.length, 2);
+    withGap.writeUInt32LE(originalOffset + gap.length, 10);
+
+    expect(bmp.decode(withGap).data).toEqual(bmp.decode(original).data);
+  });
 
   describe('32-bit', () => {
     test('normal', decodeTest(32));
@@ -408,5 +430,74 @@ describe('decode validation', () => {
     });
 
     expect(() => bmp.decode(crafted)).toThrow('Unsupported BMP bit depth 64');
+  });
+});
+
+describe('pixel data offset', () => {
+  // End of bitmap codes, so an RLE decoder that reads them stops early
+  const gap = [0, 1, 0, 1, 0, 1, 0, 1];
+  const palette = [0x000000, 0xff0000, 0x00ff00, 0x0000ff];
+
+  const images = [
+    {
+      width: 3,
+      height: 2,
+      bitPP: 24,
+      pixels: Array.from({ length: 24 }, (_, i) => i * 10),
+    },
+    {
+      width: 4,
+      height: 2,
+      bitPP: 8,
+      compression: 1,
+      palette,
+      // 4 x color 1, end of line, 2 x color 2, 2 x color 3, end of bitmap
+      pixels: [4, 1, 0, 0, 2, 2, 2, 3, 0, 1],
+    },
+    {
+      width: 4,
+      height: 2,
+      bitPP: 4,
+      compression: 2,
+      palette,
+      // 4 pixels alternating 1 and 2, end of line, 4 x color 3, end of bitmap
+      pixels: [4, 0x12, 0, 0, 4, 0x33, 0, 1],
+    },
+  ];
+
+  test.each([
+    ['24-bit', images[0]],
+    ['RLE8', images[1]],
+    ['RLE4', images[2]],
+  ])('skips bytes before the pixel data of a %s image', (_, image) => {
+    const expected = bmp.decode(createBmp(image)).data;
+
+    expect(bmp.decode(createBmp({ ...image, gap })).data).toEqual(expected);
+  });
+
+  test.each([
+    ['24-bit', images[0]],
+    ['RLE8', images[1]],
+    ['RLE4', images[2]],
+  ])('rejects an offset past the end of a %s image', (_, image) => {
+    const buffer = createBmp(image);
+
+    buffer.writeUInt32LE(buffer.length + 1, 10);
+    expect(() => bmp.decode(buffer)).toThrow(
+      `BMP pixel data offset ${buffer.length + 1} is past the end of the file`,
+    );
+
+    buffer.writeUInt32LE(0xffffffff, 10);
+    expect(() => bmp.decode(buffer)).toThrow(
+      'BMP pixel data offset 4294967295 is past the end of the file',
+    );
+  });
+
+  test('reads pixel data after the palette when the offset points inside the headers', () => {
+    const buffer = createBmp(images[1]);
+    const expected = bmp.decode(buffer).data;
+
+    buffer.writeUInt32LE(0, 10);
+    expect(bmp.decode(buffer).data).toEqual(expected);
   });
 });

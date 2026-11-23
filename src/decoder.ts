@@ -69,6 +69,9 @@ export default class BmpDecoder implements BmpImage {
     this.locAlpha = this.toRGBA ? 3 : 0;
 
     this.parseHeader();
+    // BMP pixel data starts at the file-header offset, which may include a gap
+    // after the headers and color table.
+    this.pos = Math.max(this.pos, this.offset);
     this.validate(maxResolutionInMP);
     this.parseRGBA();
   }
@@ -92,6 +95,12 @@ export default class BmpDecoder implements BmpImage {
     if (width * height > maxResolutionInMP * 1_000_000) {
       throw new Error(
         `BMP dimensions ${width}x${height} exceed the maximum resolution of ${maxResolutionInMP} megapixels`,
+      );
+    }
+
+    if (this.offset > this.buffer.length) {
+      throw new Error(
+        `BMP pixel data offset ${this.offset} is past the end of the file`,
       );
     }
 
