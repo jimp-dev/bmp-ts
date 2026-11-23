@@ -69,6 +69,9 @@ export default class BmpDecoder implements BmpImage {
     this.locAlpha = this.toRGBA ? 3 : 0;
 
     this.parseHeader();
+    // BMP pixel data starts at the file-header offset, which may include a gap
+    // after the headers and color table.
+    this.pos = Math.max(this.pos, this.offset);
     this.validate(maxResolutionInMP);
     this.parseRGBA();
   }

@@ -87,6 +87,22 @@ describe('decode', () => {
 
   test('24-bit', decodeTest(24));
 
+  test('reads pixel data from the header offset after the palette', () => {
+    const original = readFile('./images/bit8.bmp');
+    const originalOffset = original.readUInt32LE(10);
+    const gap = Buffer.from([0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe]);
+    const withGap = Buffer.concat([
+      original.subarray(0, originalOffset),
+      gap,
+      original.subarray(originalOffset),
+    ]);
+
+    withGap.writeUInt32LE(withGap.length, 2);
+    withGap.writeUInt32LE(originalOffset + gap.length, 10);
+
+    expect(bmp.decode(withGap).data).toEqual(bmp.decode(original).data);
+  });
+
   describe('32-bit', () => {
     test('normal', decodeTest(32));
     test('alpha', decodeTest('32_alpha'));
