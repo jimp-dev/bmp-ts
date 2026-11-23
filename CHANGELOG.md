@@ -1,3 +1,15 @@
+# v1.1.2 (Sun Nov 22 2026)
+
+#### 🐛 Bug Fix
+
+- Keep the node types reference in the declaration files [#35](https://github.com/jimp-dev/bmp-ts/pull/35) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v1.1.1 (Sun Nov 22 2026)
 
 #### 🐛 Bug Fix
