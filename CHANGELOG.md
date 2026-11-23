@@ -1,3 +1,15 @@
+# v1.1.1 (Sun Nov 22 2026)
+
+#### 🐛 Bug Fix
+
+- Fix RLE4/RLE8, odd width 4-bit and toRGBA palette decoding [#34](https://github.com/jimp-dev/bmp-ts/pull/34) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v1.1.0 (Sun Nov 22 2026)
 
 #### 🚀 Enhancement
