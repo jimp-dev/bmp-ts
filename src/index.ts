@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import BmpDecoder from './decoder.js';
 import BmpEncoder from './encoder.js';
 import { BmpDecoderOptions, BmpImage } from './types.js';
