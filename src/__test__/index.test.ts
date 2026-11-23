@@ -501,3 +501,219 @@ describe('pixel data offset', () => {
     expect(bmp.decode(buffer).data).toEqual(expected);
   });
 });
+
+describe('encode palette images', () => {
+  type Rgb = [number, number, number];
+
+  const toColor = ([red, green, blue]: Rgb, quad = 0) => ({
+    red,
+    green,
+    blue,
+    quad,
+  });
+
+  /** Build ABGR pixel data, which is what encode expects */
+  const createData = (pixels: Rgb[], alpha = 0xff) => {
+    const data = Buffer.alloc(pixels.length * 4);
+
+    pixels.forEach(([red, green, blue], i) => {
+      data[i * 4] = alpha;
+      data[i * 4 + 1] = blue;
+      data[i * 4 + 2] = green;
+      data[i * 4 + 3] = red;
+    });
+
+    return data;
+  };
+
+  /** Decode an image to a list of RGB colors */
+  const decodePixels = (buffer: Buffer) => {
+    const { data } = bmp.decode(buffer, { toRGBA: true });
+    const pixels: Rgb[] = [];
+
+    for (let i = 0; i < data.length; i += 4) {
+      pixels.push([data[i], data[i + 1], data[i + 2]]);
+    }
+
+    return pixels;
+  };
+
+  /** A different color for every index */
+  const createPalette = (length: number) =>
+    Array.from({ length }, (_, i): Rgb => [i, 255 - i, (i * 7) % 256]);
+
+  test.each([
+    [4, 16],
+    [8, 256],
+  ])('%i-bit uses up to %i palette colors', (bitPP, length) => {
+    const palette = createPalette(length);
+    const encoded = bmp.encode({
+      data: createData(palette),
+      width: length,
+      height: 1,
+      bitPP,
+      palette: palette.map((color) => toColor(color)),
+    });
+    const decoded = bmp.decode(encoded.data);
+
+    expect(decoded.colors).toBe(length);
+    expect(decoded.palette).toHaveLength(length);
+    expect(decodePixels(encoded.data)).toEqual(palette);
+  });
+
+  test.each([1, 4, 8])(
+    '%i-bit only writes as many colors as the palette has',
+    (bitPP) => {
+      const palette: Rgb[] = [
+        [0, 0, 0],
+        [255, 255, 255],
+      ];
+      const encoded = bmp.encode({
+        data: createData([palette[1], palette[0]]),
+        width: 2,
+        height: 1,
+        bitPP,
+        palette: palette.map((color) => toColor(color)),
+      });
+
+      expect(bmp.decode(encoded.data).colors).toBe(2);
+      expect(decodePixels(encoded.data)).toEqual([palette[1], palette[0]]);
+    },
+  );
+
+  test.each([
+    [4, 16],
+    [8, 256],
+  ])('%i-bit asks for a palette of up to %i colors', (bitPP, length) => {
+    expect(() =>
+      bmp.encode({ data: createData([[0, 0, 0]]), width: 1, height: 1, bitPP }),
+    ).toThrow(
+      `To encode ${bitPP}-bit BMPs a palette is needed. Please choose up to ${length} colors.`,
+    );
+  });
+
+  test.each([1, 4, 8])(
+    '%i-bit uses the nearest palette color for other colors',
+    (bitPP) => {
+      const palette: Rgb[] = [
+        [255, 255, 255],
+        [0, 0, 0],
+      ];
+      const encoded = bmp.encode({
+        data: createData([
+          [10, 20, 30],
+          [240, 230, 220],
+          [200, 40, 40],
+          [100, 100, 100],
+        ]),
+        width: 4,
+        height: 1,
+        bitPP,
+        palette: palette.map((color) => toColor(color)),
+      });
+
+      expect(decodePixels(encoded.data)).toEqual([
+        [0, 0, 0],
+        [255, 255, 255],
+        [0, 0, 0],
+        [0, 0, 0],
+      ]);
+    },
+  );
+
+  test('matches colors whatever their alpha or the palette quad', () => {
+    const palette: Rgb[] = [
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255],
+    ];
+    const pixels = [palette[2], palette[1], palette[0]];
+    const encoded = bmp.encode({
+      data: createData(pixels, 0x80),
+      width: 3,
+      height: 1,
+      bitPP: 8,
+      palette: palette.map((color) => toColor(color, 0)),
+    });
+
+    expect(decodePixels(encoded.data)).toEqual(pixels);
+  });
+
+  test.each([1, 4, 8])('%i-bit allows a palette quad of 255', (bitPP) => {
+    const palette: Rgb[] = [
+      [255, 255, 255],
+      [0, 0, 0],
+    ];
+    const encoded = bmp.encode({
+      data: createData(palette),
+      width: 2,
+      height: 1,
+      bitPP,
+      palette: palette.map((color) => toColor(color, 255)),
+    });
+
+    expect(bmp.decode(encoded.data).palette[0]).toEqual(
+      toColor(palette[0], 255),
+    );
+    expect(decodePixels(encoded.data)).toEqual(palette);
+  });
+
+  describe.each([1, 4, 8])(
+    '%i-bit with a width that is not byte aligned',
+    (bitPP) => {
+      test.each([
+        [13, 5],
+        [10, 3],
+        [3, 2],
+        [1, 1],
+      ])('%ix%i', (width, height) => {
+        const palette: Rgb[] = [
+          [255, 255, 255],
+          [0, 0, 0],
+        ];
+        // An uneven pattern, so pixels that end up in the wrong place show
+        const pixels = Array.from(
+          { length: width * height },
+          (_, i) => palette[(i * i + Math.floor(i / 3)) % 2],
+        );
+        const encoded = bmp.encode({
+          data: createData(pixels),
+          width,
+          height,
+          bitPP,
+          palette: palette.map((color) => toColor(color)),
+        });
+
+        expect(decodePixels(encoded.data)).toEqual(pixels);
+      });
+    },
+  );
+
+  test('1-bit without a palette is black and white', () => {
+    const pixels: Rgb[] = Array.from({ length: 13 * 3 }, (_, i) =>
+      i % 3 ? [255, 255, 255] : [0, 0, 0],
+    );
+    const encoded = bmp.encode({
+      data: createData(pixels),
+      width: 13,
+      height: 3,
+      bitPP: 1,
+    });
+
+    expect(decodePixels(encoded.data)).toEqual(pixels);
+  });
+
+  test('writes the reserved fields where the decoder reads them', () => {
+    const encoded = bmp.encode({
+      data: createData([[0, 0, 0]]),
+      width: 1,
+      height: 1,
+      reserved1: 0x1234,
+      reserved2: 0xfedc,
+    });
+    const decoded = bmp.decode(encoded.data);
+
+    expect(decoded.reserved1).toBe(0x1234);
+    expect(decoded.reserved2).toBe(0xfedc);
+  });
+});

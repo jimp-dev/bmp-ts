@@ -9,9 +9,49 @@ function createInteger(numbers: number[]) {
 }
 
 function createColor(color: BmpColor): number {
+  // >>> 0 keeps the color unsigned when the quad is 128 or more
   return (
-    (color.quad << 24) | (color.red << 16) | (color.green << 8) | color.blue
+    ((color.quad << 24) |
+      (color.red << 16) |
+      (color.green << 8) |
+      color.blue) >>>
+    0
   );
+}
+
+/**
+ * Find the palette index of a color. Colors that aren't in the palette use
+ * the nearest palette color. Alpha and the palette's quad are ignored.
+ */
+function createPaletteLookup(palette: BmpColor[]) {
+  const cache = new Map<number, number>();
+
+  return (red: number, green: number, blue: number) => {
+    const key = (red << 16) | (green << 8) | blue;
+    let index = cache.get(key);
+
+    if (index === undefined) {
+      let nearest = Infinity;
+
+      index = 0;
+
+      for (let i = 0; i < palette.length && nearest > 0; i++) {
+        const distance =
+          (palette[i].red - red) ** 2 +
+          (palette[i].green - green) ** 2 +
+          (palette[i].blue - blue) ** 2;
+
+        if (distance < nearest) {
+          nearest = distance;
+          index = i;
+        }
+      }
+
+      cache.set(key, index);
+    }
+
+    return index;
+  };
 }
 
 export default class BmpEncoder implements BmpImage {
@@ -56,13 +96,15 @@ export default class BmpEncoder implements BmpImage {
     this.hr = imgData.hr || 0;
     this.vr = imgData.vr || 0;
     this.importantColors = imgData.importantColors || 0;
-    this.colors = Math.min(
-      2 ** (this.bitPP - 1 || 1),
-      imgData.colors || Infinity,
-    );
     this.palette = imgData.palette || [];
 
-    if (this.colors && this.bitPP < 16) {
+    if (this.bitPP === 1 || this.bitPP === 4 || this.bitPP === 8) {
+      // Without a palette 1-bit images are black and white
+      const maxColors = this.palette.length
+        ? Math.min(2 ** this.bitPP, this.palette.length)
+        : 2;
+
+      this.colors = Math.min(maxColors, imgData.colors || maxColors);
       this.offset += this.colors * 4;
     } else {
       this.colors = 0;
@@ -134,8 +176,10 @@ export default class BmpEncoder implements BmpImage {
 
     this.writeUInt32LE(this.fileSize);
 
-    // Writing 2 UInt16LE resulted in a weird bug
-    this.writeUInt32LE((this.reserved1 << 16) | this.reserved2);
+    this.data.writeUInt16LE(this.reserved1, this.pos);
+    this.pos += 2;
+    this.data.writeUInt16LE(this.reserved2, this.pos);
+    this.pos += 2;
 
     this.writeUInt32LE(this.offset);
     this.writeUInt32LE(this.headerSize);
@@ -157,11 +201,15 @@ export default class BmpEncoder implements BmpImage {
   }
 
   private bit1() {
-    if (this.palette.length && this.colors === 2) {
-      this.initColors(1);
+    let getIndex: (red: number, green: number, blue: number) => number;
+
+    if (this.palette.length) {
+      getIndex = this.initColors(1);
     } else {
-      this.writeUInt32LE(0x00ffffff); // Black
-      this.writeUInt32LE(0x00000000); // White
+      this.writeUInt32LE(0x00ffffff); // White
+      this.writeUInt32LE(0x00000000); // Black
+      getIndex = (red, green, blue) =>
+        red * 0.2126 + green * 0.7152 + blue * 0.0722 > 127 ? 0 : 1;
     }
 
     this.pos += 1; // ?
@@ -176,15 +224,14 @@ export default class BmpEncoder implements BmpImage {
       const g = this.buffer[i++];
       const r = this.buffer[i++];
 
-      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-      lineArr.push(brightness > 127 ? 0 : 1);
+      lineArr.push(getIndex(r, g, b));
 
       if ((x + 1) % 8 === 0) {
         this.data[p - 1] = createInteger(lineArr);
         lineArr = [];
       } else if (x === this.width - 1 && lineArr.length > 0) {
-        this.data[p - 1] = createInteger(lineArr) << 4;
+        // The last pixels of a row go in the high bits of its last byte
+        this.data[p - 1] = createInteger(lineArr) << (8 - lineArr.length);
         lineArr = [];
       }
 
@@ -193,57 +240,43 @@ export default class BmpEncoder implements BmpImage {
   }
 
   private bit4() {
-    const colors = this.initColors(4);
+    const getIndex = this.initColors(4);
 
     let integerPair: number[] = [];
 
     this.writeImage((p, index, x) => {
-      let i = index;
+      const i = index + 1;
 
-      const colorInt = createColor({
-        quad: this.buffer[i++],
-        blue: this.buffer[i++],
-        green: this.buffer[i++],
-        red: this.buffer[i++],
-      });
-      const colorExists = colors.findIndex((c) => c === colorInt);
-
-      if (colorExists !== -1) {
-        integerPair.push(colorExists);
-      } else {
-        integerPair.push(0);
-      }
+      integerPair.push(
+        getIndex(this.buffer[i + 2], this.buffer[i + 1], this.buffer[i]),
+      );
 
       if ((x + 1) % 2 === 0) {
         this.data[p] = (integerPair[0] << 4) | integerPair[1];
         integerPair = [];
+      } else if (x === this.width - 1) {
+        // An odd width leaves the low half of the row's last byte empty
+        this.data[p] = integerPair[0] << 4;
+        integerPair = [];
       }
 
-      return i;
+      return i + 3;
     });
   }
 
   private bit8() {
-    const colors = this.initColors(8);
+    const getIndex = this.initColors(8);
 
     this.writeImage((p, index) => {
-      let i = index;
+      const i = index + 1;
 
-      const colorInt = createColor({
-        quad: this.buffer[i++],
-        blue: this.buffer[i++],
-        green: this.buffer[i++],
-        red: this.buffer[i++],
-      });
-      const colorExists = colors.findIndex((c) => c === colorInt);
+      this.data[p] = getIndex(
+        this.buffer[i + 2],
+        this.buffer[i + 1],
+        this.buffer[i],
+      );
 
-      if (colorExists !== -1) {
-        this.data[p] = colorExists;
-      } else {
-        this.data[p] = 0;
-      }
-
-      return i;
+      return i + 3;
     });
   }
 
@@ -305,22 +338,21 @@ export default class BmpEncoder implements BmpImage {
     }
   }
 
+  /** Write the palette and return a lookup from a color to its index */
   private initColors(bit: number) {
-    const colors: number[] = [];
-
-    if (this.palette.length) {
-      for (let i = 0; i < this.colors; i++) {
-        const rootColor = createColor(this.palette[i]);
-        this.writeUInt32LE(rootColor);
-        colors.push(rootColor);
-      }
-    } else {
+    if (!this.palette.length) {
       throw new Error(
-        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${this.colors} colors. Colors must be 32-bit integers.`,
+        `To encode ${bit}-bit BMPs a palette is needed. Please choose up to ${2 ** bit} colors.`,
       );
     }
 
-    return colors;
+    const palette = this.palette.slice(0, this.colors);
+
+    for (const color of palette) {
+      this.writeUInt32LE(createColor(color));
+    }
+
+    return createPaletteLookup(palette);
   }
 
   private writeUInt32LE(value: number) {

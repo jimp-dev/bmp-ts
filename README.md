@@ -59,7 +59,7 @@ const bmp = require('bmp-ts').default;
 const fs = require('fs');
 const bmpData = {
   data, // Buffer
-  bitPP: 1 | 2 | 4 | 16 | 24 | 32, // The number of bits per pixel
+  bitPP: 1 | 4 | 8 | 16 | 24 | 32, // The number of bits per pixel
   width, // Number
   height, // Number
 };
@@ -107,6 +107,8 @@ Color Format:
 ```
 
 To encode to 4 or 8 bit a color palette must be provided. 1 bit defaults to black and white but you can override this via palette.
+
+The palette can have up to 2 colors for 1-bit, 16 for 4-bit and 256 for 8-bit images; extra colors are ignored. Each pixel is written as the palette color nearest to it, so the image doesn't have to use only palette colors. Alpha is ignored when matching colors.
 
 ```js
 const rawData = bmp.encode({
