@@ -1,3 +1,15 @@
+# v1.2.0 (Mon Nov 23 2026)
+
+#### 🚀 Enhancement
+
+- Fix 1, 4 and 8-bit encoding [#36](https://github.com/jimp-dev/bmp-ts/pull/36) ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 1
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+
+---
+
 # v1.1.3 (Mon Nov 23 2026)
 
 #### 🐛 Bug Fix
