@@ -1,3 +1,16 @@
+# v1.1.3 (Mon Nov 23 2026)
+
+#### 🐛 Bug Fix
+
+- fix: respect BMP pixel data offset [#33](https://github.com/jimp-dev/bmp-ts/pull/33) ([@jay23606](https://github.com/jay23606) [@hipstersmoothie](https://github.com/hipstersmoothie))
+
+#### Authors: 2
+
+- Andrew Lisowski ([@hipstersmoothie](https://github.com/hipstersmoothie))
+- Jay ([@jay23606](https://github.com/jay23606))
+
+---
+
 # v1.1.2 (Sun Nov 22 2026)
 
 #### 🐛 Bug Fix
