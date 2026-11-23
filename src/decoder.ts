@@ -2,7 +2,7 @@ import HeaderTypes from './header-types.js';
 import maskColor from './mask-color.js';
 import { BmpCompression, BmpColor, BmpDecoderOptions, BmpImage } from './types.js';
 
-type IColorProcessor = (x: number, line: number) => void | false;
+type IColorProcessor = (x: number, line: number) => void;
 
 const SUPPORTED_BIT_DEPTHS = [1, 4, 8, 16, 24, 32];
 
@@ -273,203 +273,126 @@ export default class BmpDecoder implements BmpImage {
     const mode = xLen % 4;
     const padding = mode !== 0 ? 4 - mode : 0;
 
-    let lastLine: number | undefined;
-
     this.scanImage(padding, xLen, (x, line) => {
-      if (line !== lastLine) {
-        lastLine = line;
-      }
-
       const b = this.buffer.readUInt8(this.pos++);
       const location = line * this.width * 4 + x * 8 * 4;
 
-      for (let i = 0; i < 8; i++) {
-        if (x * 8 + i < this.width) {
-          const rgb = this.palette[(b >> (7 - i)) & 0x1];
-
-          this.data[location + i * this.locAlpha] = 0;
-          this.data[location + i * 4 + this.locBlue] = rgb.blue;
-          this.data[location + i * 4 + this.locGreen] = rgb.green;
-          this.data[location + i * 4 + this.locRed] = rgb.red;
-        } else {
-          break;
-        }
+      for (let i = 0; i < 8 && x * 8 + i < this.width; i++) {
+        this.setPixelData(location + i * 4, (b >> (7 - i)) & 0x1);
       }
     });
   }
 
   private bit4() {
     if (this.compression === BmpCompression.BI_RLE4) {
-      this.data.fill(0);
-
-      let lowNibble = false; //for all count of pixel
-      let lines = this.bottomUp ? this.height - 1 : 0;
-      let location = 0;
-
-      while (location < this.data.length) {
-        const a = this.buffer.readUInt8(this.pos++);
-        const b = this.buffer.readUInt8(this.pos++);
-
-        //absolute mode
-        if (a === 0) {
-          if (b === 0) {
-            //line end
-            lines += this.bottomUp ? -1 : 1;
-            location = lines * this.width * 4;
-            lowNibble = false;
-
-            continue;
-          }
-
-          if (b === 1) {
-            // image end
-            break;
-          }
-
-          if (b === 2) {
-            // offset x, y
-            const x = this.buffer.readUInt8(this.pos++);
-            const y = this.buffer.readUInt8(this.pos++);
-
-            lines += this.bottomUp ? -y : y;
-            location += y * this.width * 4 + x * 4;
-          } else {
-            let c = this.buffer.readUInt8(this.pos++);
-
-            for (let i = 0; i < b; i++) {
-              location = this.setPixelData(
-                location,
-                lowNibble ? c & 0x0f : (c & 0xf0) >> 4,
-              );
-
-              if (i & 1 && i + 1 < b) {
-                c = this.buffer.readUInt8(this.pos++);
-              }
-
-              lowNibble = !lowNibble;
-            }
-
-            if ((((b + 1) >> 1) & 1) === 1) {
-              this.pos++;
-            }
-          }
-        } else {
-          //encoded mode
-          for (let i = 0; i < a; i++) {
-            location = this.setPixelData(
-              location,
-              lowNibble ? b & 0x0f : (b & 0xf0) >> 4,
-            );
-            lowNibble = !lowNibble;
-          }
-        }
-      }
-    } else {
-      const xLen = Math.ceil(this.width / 2);
-      const mode = xLen % 4;
-      const padding = mode !== 0 ? 4 - mode : 0;
-
-      this.scanImage(padding, xLen, (x, line) => {
-        const b = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 2 * 4;
-
-        const first4 = b >> 4;
-        let rgb = this.palette[first4];
-
-        this.data[location] = 0;
-        this.data[location + 1] = rgb.blue;
-        this.data[location + 2] = rgb.green;
-        this.data[location + 3] = rgb.red;
-
-        if (x * 2 + 1 >= this.width) {
-          // throw new Error('Something');
-          return false;
-        }
-
-        const last4 = b & 0x0f;
-        rgb = this.palette[last4];
-
-        this.data[location + 4] = 0;
-        this.data[location + 4 + 1] = rgb.blue;
-        this.data[location + 4 + 2] = rgb.green;
-        this.data[location + 4 + 3] = rgb.red;
-      });
+      this.rle(4);
+      return;
     }
+
+    const xLen = Math.ceil(this.width / 2);
+    const mode = xLen % 4;
+    const padding = mode !== 0 ? 4 - mode : 0;
+
+    this.scanImage(padding, xLen, (x, line) => {
+      const b = this.buffer.readUInt8(this.pos++);
+      const location = line * this.width * 4 + x * 2 * 4;
+
+      this.setPixelData(location, b >> 4);
+
+      // The low nibble of the last byte in an odd width row is padding
+      if (x * 2 + 1 < this.width) {
+        this.setPixelData(location + 4, b & 0x0f);
+      }
+    });
   }
 
   private bit8() {
     if (this.compression === BmpCompression.BI_RLE8) {
-      this.data.fill(0);
+      this.rle(8);
+      return;
+    }
 
-      let lines = this.bottomUp ? this.height - 1 : 0;
-      let location = 0;
+    const mode = this.width % 4;
+    const padding = mode !== 0 ? 4 - mode : 0;
 
-      while (location < this.data.length) {
-        const a = this.buffer.readUInt8(this.pos++);
-        const b = this.buffer.readUInt8(this.pos++);
+    this.scanImage(padding, this.width, (x, line) => {
+      const b = this.buffer.readUInt8(this.pos++);
+      this.setPixelData(line * this.width * 4 + x * 4, b);
+    });
+  }
 
-        //absolute mode
-        if (a === 0) {
-          if (b === 0) {
-            //line end
-            lines += this.bottomUp ? -1 : 1;
-            location = lines * this.width * 4;
-            continue;
-          }
+  /**
+   * Decode BI_RLE4 and BI_RLE8 data. Each code is two bytes: a pixel count
+   * and a palette index (two alternating indexes for RLE4), or a zero
+   * followed by an escape.
+   */
+  private rle(bitPP: 4 | 8) {
+    // Pixels that the data skips over get the first palette color, like
+    // other decoders do
+    for (let location = 0; location < this.data.length; location += 4) {
+      this.setPixelData(location, 0);
+    }
 
-          if (b === 1) {
-            //image end
-            break;
-          }
+    const step = this.bottomUp ? -1 : 1;
+    let line = this.bottomUp ? this.height - 1 : 0;
+    let x = 0;
 
-          if (b === 2) {
-            //offset x,y
-            const x = this.buffer.readUInt8(this.pos++);
-            const y = this.buffer.readUInt8(this.pos++);
+    const pixel = (byte: number, i: number) =>
+      bitPP === 8 ? byte : i & 1 ? byte & 0x0f : byte >> 4;
 
-            lines += this.bottomUp ? -y : y;
-            location += y * this.width * 4 + x * 4;
-          } else {
-            for (let i = 0; i < b; i++) {
-              const c = this.buffer.readUInt8(this.pos++);
-              location = this.setPixelData(location, c);
-            }
-
-            // @ts-ignore
-            const shouldIncrement = b & (1 === 1);
-            if (shouldIncrement) {
-              this.pos++;
-            }
-          }
-        } else {
-          //encoded mode
-          for (let i = 0; i < a; i++) {
-            location = this.setPixelData(location, b);
-          }
-        }
+    const setPixel = (index: number) => {
+      if (x < this.width) {
+        this.setPixelData((line * this.width + x) * 4, index);
       }
-    } else {
-      const mode = this.width % 4;
-      const padding = mode !== 0 ? 4 - mode : 0;
 
-      this.scanImage(padding, this.width, (x, line) => {
-        const b = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 4;
+      x++;
+    };
 
-        if (b < this.palette.length) {
-          const rgb = this.palette[b];
+    while (
+      line >= 0 &&
+      line < this.height &&
+      this.pos + 1 < this.buffer.length
+    ) {
+      const a = this.buffer.readUInt8(this.pos++);
+      const b = this.buffer.readUInt8(this.pos++);
 
-          this.data[location] = 0;
-          this.data[location + 1] = rgb.blue;
-          this.data[location + 2] = rgb.green;
-          this.data[location + 3] = rgb.red;
-        } else {
-          this.data[location] = 0;
-          this.data[location + 1] = 0xff;
-          this.data[location + 2] = 0xff;
-          this.data[location + 3] = 0xff;
+      if (a !== 0) {
+        // Encoded mode: repeat b for a pixels
+        for (let i = 0; i < a; i++) {
+          setPixel(pixel(b, i));
         }
-      });
+      } else if (b === 0) {
+        // End of line
+        line += step;
+        x = 0;
+      } else if (b === 1) {
+        // End of bitmap
+        break;
+      } else if (b === 2) {
+        // Delta: move right and to a later line
+        if (this.pos + 1 >= this.buffer.length) {
+          break;
+        }
+
+        x += this.buffer.readUInt8(this.pos++);
+        line += step * this.buffer.readUInt8(this.pos++);
+      } else {
+        // Absolute mode: b pixels follow, padded to a 16-bit boundary
+        const bytes = bitPP === 8 ? b : Math.ceil(b / 2);
+
+        if (this.pos + bytes > this.buffer.length) {
+          break;
+        }
+
+        for (let i = 0; i < b; i++) {
+          const byte = this.buffer.readUInt8(
+            this.pos + (bitPP === 8 ? i : i >> 1),
+          );
+          setPixel(pixel(byte, i));
+        }
+
+        this.pos += bytes + (bytes & 1);
+      }
     }
   }
 
@@ -525,11 +448,7 @@ export default class BmpDecoder implements BmpImage {
       const line = this.bottomUp ? y : this.height - 1 - y;
 
       for (let x = 0; x < width; x++) {
-        const result = processPixel.call(this, x, line);
-
-        if (result === false) {
-          return;
-        }
+        processPixel.call(this, x, line);
       }
 
       this.pos += padding;
@@ -543,13 +462,16 @@ export default class BmpDecoder implements BmpImage {
   }
 
   private setPixelData(location: number, rgbIndex: number) {
-    const { blue, green, red } = this.palette[rgbIndex];
+    // Out of range indexes are drawn white
+    const { blue, green, red } = this.palette[rgbIndex] ?? {
+      blue: 0xff,
+      green: 0xff,
+      red: 0xff,
+    };
 
     this.data[location + this.locAlpha] = 0;
-    this.data[location + 1 + this.locBlue] = blue;
-    this.data[location + 2 + this.locGreen] = green;
-    this.data[location + 3 + this.locRed] = red;
-
-    return location + 4;
+    this.data[location + this.locBlue] = blue;
+    this.data[location + this.locGreen] = green;
+    this.data[location + this.locRed] = red;
   }
 }

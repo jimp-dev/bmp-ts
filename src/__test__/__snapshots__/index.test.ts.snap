@@ -2,11 +2,11 @@
 
 exports[`decode > 1-bit 1`] = `"cec76def32993b226b554d08f78948d9"`;
 
-exports[`decode > 4-bit > RLE 1`] = `"beac91cf64120346736c9b1383f9da60"`;
+exports[`decode > 4-bit > RLE 1`] = `"df219955a66ea20a8ccb4f0537930458"`;
 
 exports[`decode > 4-bit > normal 1`] = `"df219955a66ea20a8ccb4f0537930458"`;
 
-exports[`decode > 8-bit > RLE 1`] = `"81bbf4f1f828dde5665bf1d798e39e72"`;
+exports[`decode > 8-bit > RLE 1`] = `"6697bb6ab8078d739fc40bbe558bf4ce"`;
 
 exports[`decode > 8-bit > normal 1`] = `"6697bb6ab8078d739fc40bbe558bf4ce"`;
 
